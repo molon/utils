@@ -130,7 +130,7 @@ func LogPanicHandler(logf lg.AppLogFunc) func(w http.ResponseWriter, req *http.R
 	}
 }
 
-func LogNotFoundHandler(logf lg.AppLogFunc) http.Handler {
+func LogNotFoundHandler(logf lg.AppLogFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		Decorate(func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) {
 			return nil, Err{404, "NOT_FOUND"}
@@ -138,7 +138,7 @@ func LogNotFoundHandler(logf lg.AppLogFunc) http.Handler {
 	})
 }
 
-func LogMethodNotAllowedHandler(logf lg.AppLogFunc) http.Handler {
+func LogMethodNotAllowedHandler(logf lg.AppLogFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		Decorate(func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) (interface{}, error) {
 			return nil, Err{405, "METHOD_NOT_ALLOWED"}
