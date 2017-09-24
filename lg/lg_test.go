@@ -9,26 +9,26 @@ import (
 )
 
 func TestStdLogger(t *testing.T) {
-	logger := NewStdLogger(false, false, false, INFO, func() {
+	l := NewStdLogger("", false, false, false, INFO, func() {
 		os.Exit(1)
 	})
 
-	flags := logger.logger.Flags()
+	flags := l.(*logger).goLogger.Flags()
 	if flags != 0 {
 		t.Fatalf("Expected %q, received %q\n", 0, flags)
 	}
 
-	if logger.logLevel != INFO {
-		t.Fatalf("Expected %d, received %d\n", INFO, logger.logLevel)
+	if l.(*logger).logLevel != INFO {
+		t.Fatalf("Expected %d, received %d\n", INFO, l.(*logger).logLevel)
 	}
 }
 
 func TestStdLoggerWithTime(t *testing.T) {
-	logger := NewStdLogger(true, false, false, DEBUG, func() {
+	l := NewStdLogger("", true, false, false, DEBUG, func() {
 		os.Exit(1)
 	})
 
-	flags := logger.logger.Flags()
+	flags := l.(*logger).goLogger.Flags()
 	if flags != log.LstdFlags|log.Lmicroseconds {
 		t.Fatalf("Expected %d, received %d\n", log.LstdFlags, flags)
 	}
@@ -36,37 +36,37 @@ func TestStdLoggerWithTime(t *testing.T) {
 
 func TestStdLoggerInfo(t *testing.T) {
 	expectOutput(t, func() {
-		logger := NewStdLogger(false, false, false, INFO, func() {
+		l := NewStdLogger("", false, false, false, INFO, func() {
 			os.Exit(1)
 		})
-		logger.Logf(INFO, "foo")
+		l.Logf(INFO, "foo")
 	}, "[INF] foo\n")
 }
 
 func TestStdLoggerInfoWithColor(t *testing.T) {
 	expectOutput(t, func() {
-		logger := NewStdLogger(false, true, false, INFO, func() {
+		l := NewStdLogger("", false, true, false, INFO, func() {
 			os.Exit(1)
 		})
-		logger.Logf(INFO, "foo")
+		l.Logf(INFO, "foo")
 	}, "[\x1b[32mINF\x1b[0m] foo\n")
 }
 
 func TestStdLoggerDebug(t *testing.T) {
 	expectOutput(t, func() {
-		logger := NewStdLogger(false, false, false, DEBUG, func() {
+		l := NewStdLogger("", false, false, false, DEBUG, func() {
 			os.Exit(1)
 		})
-		logger.Logf(DEBUG, "foo %s", "bar")
+		l.Logf(DEBUG, "foo %s", "bar")
 	}, "[DBG] foo bar\n")
 }
 
 func TestStdLoggerDebugWithINFO(t *testing.T) {
 	expectOutput(t, func() {
-		logger := NewStdLogger(false, false, false, INFO, func() {
+		l := NewStdLogger("", false, false, false, INFO, func() {
 			os.Exit(1)
 		})
-		logger.Logf(DEBUG, "foo")
+		l.Logf(DEBUG, "foo")
 	}, "")
 }
 

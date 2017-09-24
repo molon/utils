@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/agilab/telegraf_api/internal/logger"
+	"github.com/molon/utils/lg"
 
 	"google.golang.org/grpc/naming"
 
@@ -33,7 +33,7 @@ type Service struct {
 	service string
 	address *Address
 	ttl     int64
-	logger  *logger.Logger
+	logf    lg.AppLogFunc
 
 	client         *etcd.Client
 	leaseGrantResp *etcd.LeaseGrantResponse
@@ -50,7 +50,7 @@ type Address struct {
 }
 
 //NewService new service for registering into etcd
-func NewService(client *etcd.Client, service string, address *Address, ttl int64, logger *logger.Logger) *Service {
+func NewService(client *etcd.Client, service string, address *Address, ttl int64, logf lg.AppLogFunc) *Service {
 	if ttl < 3 {
 		ttl = 3
 	}
@@ -59,7 +59,7 @@ func NewService(client *etcd.Client, service string, address *Address, ttl int64
 		service: service,
 		address: address,
 		ttl:     ttl,
-		logger:  logger,
+		logf:    logf,
 	}
 	d.ctx, d.cancel = context.WithCancel(client.Ctx())
 	return d
@@ -86,9 +86,9 @@ func (d *Service) Close() error {
 			naming.Update{
 				Op:   naming.Delete,
 				Addr: d.address.Addr}); err != nil && err != context.Canceled {
-			d.logger.Errorf("[discovery] delete service error - %s", err)
+			d.logf(lg.ERROR, "[discovery] delete service error - %s", err)
 		} else {
-			d.logger.Infof("[discovery] unregister service(%s) from etcd", d.service+"/"+d.address.Addr)
+			d.logf(lg.INFO, "[discovery] unregister service(%s) from etcd", d.service+"/"+d.address.Addr)
 		}
 		cancel()
 		d.resolver = nil
@@ -98,7 +98,7 @@ func (d *Service) Close() error {
 		if d.leaseGrantResp != nil {
 			ctx, cancel := context.WithTimeout(d.client.Ctx(), time.Duration(d.ttl)*time.Second)
 			if _, err := d.client.Revoke(ctx, d.leaseGrantResp.ID); err != nil && err != context.Canceled {
-				d.logger.Errorf("[discovery] revoke lease error - %s", err)
+				d.logf(lg.ERROR, "[discovery] revoke lease error - %s", err)
 			}
 			cancel()
 			d.leaseGrantResp = nil
@@ -133,7 +133,7 @@ func (d *Service) register() error {
 		return err
 	}
 
-	d.logger.Infof("[discovery] register service(%s) into etcd", d.service+"/"+d.address.Addr)
+	d.logf(lg.INFO, "[discovery] register service(%s) into etcd", d.service+"/"+d.address.Addr)
 
 	return nil
 }
@@ -199,7 +199,7 @@ func (d *Service) KeepAlive() error {
 				}
 				d.mu.Unlock()
 			}
-			d.logger.Debugf("[discovery] service keepalive")
+			d.logf(lg.DEBUG, "[discovery] service keepalive")
 		}
 	}
 
@@ -233,7 +233,7 @@ func (d *Service) KeepAlive() error {
 	// 			ctx, _ = context.WithCancel(d.ctx)
 	// 			_, err = d.client.KeepAliveOnce(ctx, d.leaseGrantResp.ID)
 	// 			if err == nil {
-	// 				d.logger.Debugf("[discovery] service keepalive %v", d.leaseGrantResp.ID)
+	// 				d.logf(lg.DEBUG,"[discovery] service keepalive %v", d.leaseGrantResp.ID)
 	// 			} else if err == rpctypes.ErrLeaseNotFound {
 	// 				err = d.register()
 	// 			}
